@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@theme {
+
+    --color-primary-50: #ecfdf5;
+    --color-primary-100: #d1fae5;
+    --color-primary-200: #a7f3d0;
+    --color-primary-300: #6ee7b7;
+    --color-primary-400: #34d399;
+    --color-primary-500: #10b981;
+    --color-primary-600: #059669;
+    --color-primary-700: #047857;
+    --color-primary-800: #065f46;
+    --color-primary-900: #064e3b;
+    --color-primary-950: #022c22;
+
+    --font-inter: 'Inter Variable', system-ui, sans-serif;
+}
+
+@layer base {
+    body {
+        :root {
+            font-family: 'Inter Variable', sans-serif;
+        }
+        @apply bg-gray-50 text-gray-800 font-inter;
+
+        .nav-link {
+            @apply font-medium text-gray-600 hover:text-primary-600 transition-colors;
+        }
+
+        .dropdown-item {
+            @apply block w-full text-left px-4 py-2 rounded-lg
+            hover:bg-primary-50 text-sm text-gray-700 hover:text-primary-700;
+        }
+
+        .mobile-link {
+            @apply py-2 text-gray-700 font-medium text-left;
+        }
+        .form-input {
+            @apply w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all;
+        }
+        input:focus, textarea:focus {
+            @apply bg-white;
+        }
+    }
+}
