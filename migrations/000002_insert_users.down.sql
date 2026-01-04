@@ -1,0 +1,1 @@
+DELETE FROM users WHERE username IN ('admin', 'teacher1', 'student1');
