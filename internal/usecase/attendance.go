@@ -82,3 +82,19 @@ func (u *AttendanceUsecaseImpl) Save(ctx context.Context, journalID int, attenda
 		Sick:       sick,
 	}, nil
 }
+
+func (u *AttendanceUsecaseImpl) FindByStudentID(ctx context.Context, studentID int) ([]response.AttendanceResponse, error) {
+	return u.attendanceRepo.FindByStudentID(ctx, studentID)
+}
+
+func (u *AttendanceUsecaseImpl) FindByJournalID(ctx context.Context, journalID int) ([]response.AttendanceResponse, error) {
+	return u.attendanceRepo.FindByJournalID(ctx, journalID)
+}
+
+func (u *AttendanceUsecaseImpl) FindByClassID(ctx context.Context, classID int) ([]response.AttendanceResponse, error) {
+	return u.attendanceRepo.FindByClassID(ctx, classID)
+}
+
+func (u *AttendanceUsecaseImpl) FindAll(ctx context.Context) ([]response.AttendanceResponse, error) {
+	return u.attendanceRepo.FindAll(ctx)
+}

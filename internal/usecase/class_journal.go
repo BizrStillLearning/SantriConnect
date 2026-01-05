@@ -5,15 +5,18 @@ import (
 	"santri-connect-api/internal/delivery/http/dto/request"
 	"santri-connect-api/internal/delivery/http/dto/response"
 	"santri-connect-api/internal/repository"
+	"time"
 )
 
 type ClassJournalImpl struct {
 	classJournalRepo repository.ClassJournalRepository
+	teacherRepo      repository.TeacherRepository
 }
 
-func NewClassJournalUseCase(classJournalRepo repository.ClassJournalRepository) ClassJournalUsecase {
+func NewClassJournalUseCase(classJournalRepo repository.ClassJournalRepository, teacherRepo repository.TeacherRepository) ClassJournalUsecase {
 	return &ClassJournalImpl{
 		classJournalRepo: classJournalRepo,
+		teacherRepo:      teacherRepo,
 	}
 }
 
@@ -56,5 +59,17 @@ func (u *ClassJournalImpl) Save(ctx context.Context, req request.CreateClassJour
 	response.ClassJournalResponse,
 	error,
 ) {
-	return u.classJournalRepo.Save(ctx, req)
+	teacherID, err := u.teacherRepo.FindIDByUserID(ctx, req.TeacherID)
+	if err != nil {
+		return response.ClassJournalResponse{}, err
+	}
+
+	req.TeacherID = teacherID
+
+	parseDate, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		return response.ClassJournalResponse{}, err
+	}
+
+	return u.classJournalRepo.Save(ctx, req, parseDate)
 }

@@ -36,15 +36,21 @@ func AuthMiddleware(jwtSvc jwt.TokenUseCases, roles ...string) fiber.Handler {
 			return http.ErrorResponse(c, fiber.StatusUnauthorized, "invalid or expired token", err)
 		}
 
-		for _, role := range roles {
-			if role == claims.Role {
-				break
+		if len(roles) != 0 {
+			var roleMatch bool
+			for _, role := range roles {
+				if claims.Role == role {
+					roleMatch = true
+					break
+				}
 			}
 
-			return http.ErrorResponse(
-				c, fiber.StatusForbidden, "failed to authenticate user, insufficient permission",
-				domain.ErrPermissions,
-			)
+			if !roleMatch {
+				return http.ErrorResponse(
+					c, fiber.StatusForbidden, "failed to authenticate user, insufficient permission",
+					domain.ErrPermissions,
+				)
+			}
 		}
 
 		c.Locals("users", claims)

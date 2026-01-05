@@ -68,4 +68,42 @@ type AttendanceUsecase interface {
 		response.CreateBulkAttendanceResponse,
 		error,
 	)
+	FindByStudentID(ctx context.Context, studentID int) ([]response.AttendanceResponse, error)
+	FindByJournalID(ctx context.Context, journalID int) ([]response.AttendanceResponse, error)
+	FindByClassID(ctx context.Context, classID int) ([]response.AttendanceResponse, error)
+	FindAll(ctx context.Context) ([]response.AttendanceResponse, error)
+}
+
+type TeacherUsecase interface {
+	FindByID(ctx context.Context, id int) (
+		response.TeacherResponse,
+		error,
+	)
+	FindByUserID(ctx context.Context, userID int) (
+		response.TeacherResponse,
+		error,
+	)
+	FindAll(ctx context.Context) (
+		[]response.TeacherResponse,
+		error,
+	)
+	FindBySpecialization(ctx context.Context, specialization string) (
+		[]response.TeacherResponse,
+		error,
+	)
+	FindIDByUserID(ctx context.Context, userID int) (
+		int,
+		error,
+	)
+	AddTeacher(ctx context.Context, req request.CreateTeacherRequest) (
+		response.TeacherResponse,
+		error,
+	)
+}
+
+type UserUsecase interface {
+	FindByID(ctx context.Context, id int) (
+		response.UserResponse,
+		error,
+	)
 }

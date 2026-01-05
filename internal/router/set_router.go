@@ -27,4 +27,6 @@ func RegisterRouter(router fiber.Router, appCtx *AppContext, cfg *config.Config)
 	RegisterClassJournalRouter(router, appCtx, cfg)
 	RegisterStudentRouter(router, appCtx, cfg)
 	RegisterAttendanceRouter(router, appCtx, cfg)
+	RegisterTeacherRouter(router, appCtx, cfg)
+	RegisterUserRouter(router, appCtx, cfg)
 }

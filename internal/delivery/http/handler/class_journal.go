@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"santri-connect-api/internal/delivery/http"
 	"santri-connect-api/internal/delivery/http/dto/request"
 	"santri-connect-api/internal/domain"
+	"santri-connect-api/internal/infrastructure/jwt"
 	"santri-connect-api/internal/usecase"
 	"strconv"
 	"time"
@@ -63,7 +65,9 @@ func (h *ClassJournalHandler) FindByClassID(c *fiber.Ctx) error {
 
 	resp, err := h.usecase.FindByClassID(ctx, classID)
 	if err != nil {
-		return http.ErrorResponse(c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan kelas", err)
+		return http.ErrorResponse(
+			c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan kelas", err,
+		)
 	}
 
 	return http.SuccessResponse(c, fiber.StatusOK, resp)
@@ -80,7 +84,9 @@ func (h *ClassJournalHandler) FindByTeacherID(c *fiber.Ctx) error {
 
 	resp, err := h.usecase.FindByTeacherID(ctx, teacherID)
 	if err != nil {
-		return http.ErrorResponse(c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan guru", err)
+		return http.ErrorResponse(
+			c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan guru", err,
+		)
 	}
 
 	return http.SuccessResponse(c, fiber.StatusOK, resp)
@@ -97,7 +103,9 @@ func (h *ClassJournalHandler) FindBySubjectID(c *fiber.Ctx) error {
 
 	resp, err := h.usecase.FindBySubjectID(ctx, subjectID)
 	if err != nil {
-		return http.ErrorResponse(c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan mata pelajaran", err)
+		return http.ErrorResponse(
+			c, h.mapperStatusToResponse(err), "gagal mendapatkan data jurnal kelas berdasarkan mata pelajaran", err,
+		)
 	}
 
 	return http.SuccessResponse(c, fiber.StatusOK, resp)
@@ -106,8 +114,13 @@ func (h *ClassJournalHandler) FindBySubjectID(c *fiber.Ctx) error {
 func (h *ClassJournalHandler) Save(c *fiber.Ctx) error {
 	var req request.CreateClassJournalRequest
 	if err := c.BodyParser(&req); err != nil {
+		fmt.Println(err)
 		return http.ErrorResponse(c, fiber.StatusBadRequest, "data request tidak valid", domain.ErrBodyParse)
 	}
+
+	claims := c.Locals("users").(*jwt.Claims)
+
+	req.TeacherID = claims.UserID
 
 	ctx, cancel := context.WithTimeout(c.Context(), 2*time.Second)
 	defer cancel()

@@ -38,4 +38,9 @@ var (
 	ErrClassJournalNotFound      = errors.New("class journal not found")
 	ErrStudentNotFound           = errors.New("student not found")
 	ErrClassJournalAlreadyExists = errors.New("class journal already exists")
+
+	ErrTeacherNotFound          = errors.New("teacher not found, please check your teacher ID")
+	ErrNIPTeacherAlready        = errors.New("NIP teacher already exists")
+	ErrDataTeacherAlreadyExists = errors.New("data teacher already exists")
+	ErrInvalidID                = errors.New("invalid id")
 )

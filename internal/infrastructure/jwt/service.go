@@ -3,7 +3,6 @@ package jwt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"santri-connect-api/internal/repository"
 	"time"
 
@@ -89,8 +88,6 @@ func (j *jwtService) ValidateToken(ctx context.Context, tokenString string) (
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token claims")
 	}
-
-	fmt.Printf("claims: %+v", claims)
 
 	if err := j.authr.CheckBlackList(ctx, tokenString); err != nil {
 		return nil, err

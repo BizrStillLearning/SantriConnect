@@ -13,19 +13,27 @@ import (
 
 func RegisterClassJournalRouter(router fiber.Router, appCtx *AppContext, cfg *config.Config) {
 	classJournalRepo := repository.NewClassJournalRepository(appCtx.DB, appCtx.Client)
-	service := usecase.NewClassJournalUseCase(classJournalRepo)
+	teacherRepo := repository.NewTeacherRepository(appCtx.DB, appCtx.Client)
+	service := usecase.NewClassJournalUseCase(classJournalRepo, teacherRepo)
 	handling := handler.NewClassJournalHandler(service)
 
 	classJournal := router.Group("/class-journals").Use(middleware.RateLimiter(cfg))
 	{
-		classJournal.Get("/:id", handling.FindByID)
-		classJournal.Get("/", handling.FindAll)
-		classJournal.Get("/class/:classID", handling.FindByClassID)
-		classJournal.Get("/teacher/:teacherID", handling.FindByTeacherID)
-		classJournal.Get("/subject/:subjectID", handling.FindBySubjectID)
+		accessSvc := jwt.NewJWTService(
+			cfg.JwtCfg.AccessTokenSecret, "santriconnect.com",
+			repository.NewAuthenticationRepository(appCtx.DB, appCtx.Client),
+		)
 
-		// Protected routes
-		accessSvc := jwt.NewJWTService(cfg.JwtCfg.AccessTokenSecret, "santriconnect.com", repository.NewAuthenticationRepository(appCtx.DB, appCtx.Client))
+		public := classJournal.Use(middleware.AuthMiddleware(accessSvc, "admin", "teacher", "student"))
+		{
+			public.Get("/:id", handling.FindByID)
+			public.Get("/", handling.FindAll)
+			public.Get("/class/:classID", handling.FindByClassID)
+			public.Get("/teacher/:teacherID", handling.FindByTeacherID)
+			public.Get("/subject/:subjectID", handling.FindBySubjectID)
+
+		}
+
 		protected := classJournal.Use(middleware.AuthMiddleware(accessSvc, "admin", "teacher"))
 		{
 			protected.Post("/", handling.Save)

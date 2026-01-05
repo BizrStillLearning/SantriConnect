@@ -45,7 +45,7 @@ type ClassJournalRepository interface {
 		[]response.ClassJournalResponse,
 		error,
 	)
-	Save(ctx context.Context, req request.CreateClassJournalRequest) (
+	Save(ctx context.Context, req request.CreateClassJournalRequest, parseDate time.Time) (
 		response.ClassJournalResponse,
 		error,
 	)
@@ -68,4 +68,35 @@ type StudentRepository interface {
 
 type AttendanceRepository interface {
 	Save(ctx context.Context, req request.CreateBulkAttendanceRequest) error
+	FindByStudentID(ctx context.Context, studentID int) ([]response.AttendanceResponse, error)
+	FindByJournalID(ctx context.Context, journalID int) ([]response.AttendanceResponse, error)
+	FindByClassID(ctx context.Context, classID int) ([]response.AttendanceResponse, error)
+	FindAll(ctx context.Context) ([]response.AttendanceResponse, error)
+}
+
+type TeacherRepository interface {
+	FindByID(ctx context.Context, id int) (
+		response.TeacherResponse,
+		error,
+	)
+	FindByUserID(ctx context.Context, userID int) (
+		response.TeacherResponse,
+		error,
+	)
+	FindAll(ctx context.Context) (
+		[]response.TeacherResponse,
+		error,
+	)
+	FindBySpecialization(ctx context.Context, specialization string) (
+		[]response.TeacherResponse,
+		error,
+	)
+	FindIDByUserID(ctx context.Context, userID int) (
+		int,
+		error,
+	)
+	AddTeacher(ctx context.Context, req request.CreateTeacherRequest) (
+		int,
+		error,
+	)
 }

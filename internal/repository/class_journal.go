@@ -6,6 +6,7 @@ import (
 	"santri-connect-api/internal/delivery/http/dto/request"
 	"santri-connect-api/internal/delivery/http/dto/response"
 	"santri-connect-api/internal/domain"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -206,7 +207,7 @@ func (r *ClassJournalRepositoryImpl) FindBySubjectID(ctx context.Context, subjec
 	return journals, nil
 }
 
-func (r *ClassJournalRepositoryImpl) Save(ctx context.Context, req request.CreateClassJournalRequest) (
+func (r *ClassJournalRepositoryImpl) Save(ctx context.Context, req request.CreateClassJournalRequest, parseDate time.Time) (
 	response.ClassJournalResponse,
 	error,
 ) {
@@ -214,7 +215,7 @@ func (r *ClassJournalRepositoryImpl) Save(ctx context.Context, req request.Creat
 	err := r.db.QueryRow(
 		ctx, `INSERT INTO class_journals (date, subject_id, class_id, topic, notes, teacher_id) 
 			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		req.Date, req.SubjectID, req.ClassID, req.Topic, req.Notes, req.TeacherID,
+		parseDate, req.SubjectID, req.ClassID, req.Topic, req.Notes, req.TeacherID,
 	).Scan(&id)
 	if err != nil {
 		return response.ClassJournalResponse{}, err
