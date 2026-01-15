@@ -89,6 +89,38 @@ func (u *AuthenticationUsecaseImpl) Login(ctx context.Context, username, passwor
 	}, nil
 }
 
+func (u *AuthenticationUsecaseImpl) StudentRegistration(ctx context.Context, username, email, password, fullName, address, parentName, parentPhone string) (
+	response.RegisterResponse,
+	error,
+) {
+	req := request.RegisterRequest{
+		Username:    username,
+		Email:       email,
+		Password:    password,
+		FullName:    fullName,
+		Address:     address,
+		ParentName:  parentName,
+		ParentPhone: parentPhone,
+	}
+
+	userID, err := u.authr.StudentRegistration(ctx, req)
+	if err != nil {
+		return response.RegisterResponse{}, err
+	}
+
+	user, err := u.userr.FindByID(ctx, userID)
+	if err != nil {
+		return response.RegisterResponse{}, err
+	}
+
+	resp := response.RegisterResponse{
+		User:    user,
+		Message: "register student successfully",
+	}
+
+	return resp, nil
+}
+
 func (u *AuthenticationUsecaseImpl) Logout(ctx context.Context, accessToken string) (
 	response.LogoutResponse,
 	error,

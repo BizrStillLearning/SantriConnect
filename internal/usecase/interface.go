@@ -11,6 +11,10 @@ type AuthenticationUsecase interface {
 		response.LoginResponse,
 		error,
 	)
+	StudentRegistration(ctx context.Context, username, email, password, fullName, address, parentName, parentPhone string) (
+		response.RegisterResponse,
+		error,
+	)
 	Logout(ctx context.Context, accessToken string) (
 		response.LogoutResponse,
 		error,
@@ -68,10 +72,22 @@ type AttendanceUsecase interface {
 		response.CreateBulkAttendanceResponse,
 		error,
 	)
-	FindByStudentID(ctx context.Context, studentID int) ([]response.AttendanceResponse, error)
-	FindByJournalID(ctx context.Context, journalID int) ([]response.AttendanceResponse, error)
-	FindByClassID(ctx context.Context, classID int) ([]response.AttendanceResponse, error)
-	FindAll(ctx context.Context) ([]response.AttendanceResponse, error)
+	FindByStudentID(ctx context.Context, studentID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindByJournalID(ctx context.Context, journalID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindByClassID(ctx context.Context, classID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindAll(ctx context.Context) (
+		[]response.AttendanceResponse,
+		error,
+	)
 }
 
 type TeacherUsecase interface {

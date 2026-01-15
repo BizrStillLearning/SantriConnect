@@ -43,4 +43,6 @@ var (
 	ErrNIPTeacherAlready        = errors.New("NIP teacher already exists")
 	ErrDataTeacherAlreadyExists = errors.New("data teacher already exists")
 	ErrInvalidID                = errors.New("invalid id")
+
+	ErrRegisterStudent = errors.New("failed to register student")
 )

@@ -33,6 +33,9 @@ func (h *AuthenticationHandler) Login(c *fiber.Ctx) error {
 
 	resp, err := h.usecase.Login(ctx, req.Username, req.Password)
 	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return http.ErrorResponse(c, fiber.StatusNotFound, "user tidak ditemukan", err)
+		}
 		return http.ErrorResponse(c, h.mapperStatusToResponse(err), "user gagal login", err)
 	}
 
@@ -47,6 +50,26 @@ func (h *AuthenticationHandler) Login(c *fiber.Ctx) error {
 			Path:     "/",
 		},
 	)
+
+	return http.SuccessResponse(c, fiber.StatusOK, resp)
+}
+
+func (h *AuthenticationHandler) StudentRegistration(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(c.Context(), 2*time.Second)
+	defer cancel()
+
+	var req request.RegisterRequest
+	if err := c.BodyParser(&req); err != nil {
+		return http.ErrorResponse(c, fiber.StatusBadRequest, "data request tidak valid", domain.ErrBodyParse)
+	}
+
+	resp, err := h.usecase.StudentRegistration(
+		ctx, req.Username, req.Email, req.Password, req.FullName, req.Address, req.ParentName, req.ParentPhone,
+	)
+
+	if err != nil {
+		return http.ErrorResponse(c, h.mapperStatusToResponse(err), "gagal mendaftarkan user", err)
+	}
 
 	return http.SuccessResponse(c, fiber.StatusOK, resp)
 }

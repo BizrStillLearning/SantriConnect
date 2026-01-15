@@ -14,3 +14,14 @@ type CreateSessionRequest struct {
 	DeviceName string
 	ExpiresAt  time.Time
 }
+
+type RegisterRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"mail,required"`
+	Password string `json:"password" validate:"required"`
+
+	FullName    string `json:"full_name" validate:"required"`
+	Address     string `json:"address" validate:"required"`
+	ParentName  string `json:"parent_name" validate:"required"`
+	ParentPhone string `json:"parent_phone" validate:"required"`
+}

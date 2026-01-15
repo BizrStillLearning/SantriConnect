@@ -81,3 +81,55 @@ func (u *UserRepositoryImpl) FindByID(ctx context.Context, id int) (
 
 	return response.UserResponse{}, domain.ErrExecutionRedis
 }
+
+func (u *UserRepositoryImpl) FindAll(ctx context.Context) (
+	[]response.UserResponse,
+	error,
+) {
+	var users []response.UserResponse
+
+	key := fmt.Sprintf("user:*")
+	userJson, err := u.client.Get(ctx, key).Result()
+	if err == nil {
+		if err := json.Unmarshal([]byte(userJson), &users); err == nil {
+			return users, nil
+		}
+	}
+
+	rows, err := u.db.Query(
+		ctx, `SELECT u.id, u.username, u.email, u.created_at, r.name 
+			FROM users u
+			LEFT JOIN roles r ON r.id = u.role_id`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var user response.UserResponse
+		if err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.CreatedAt,
+			&user.Role,
+		); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	go func() {
+		cachedData, err := json.Marshal(users)
+		if err != nil {
+			return
+		}
+
+		if err := u.client.Set(ctx, key, cachedData, 1*time.Hour).Err(); err != nil {
+			return
+		}
+	}()
+
+	return users, nil
+}

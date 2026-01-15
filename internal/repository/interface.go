@@ -14,11 +14,20 @@ type AuthenticationRepository interface {
 	)
 	CheckBlackList(ctx context.Context, token string) error
 	AddToBlackList(ctx context.Context, token string, expiration time.Duration) error
+	StudentRegistration(ctx context.Context, req request.RegisterRequest) (
+		int,
+		error,
+	)
+	StudentVerification(ctx context.Context, userID, statusID int) error
 }
 
 type UserRepository interface {
 	FindByID(ctx context.Context, id int) (
 		response.UserResponse,
+		error,
+	)
+	FindAll(ctx context.Context) (
+		[]response.UserResponse,
 		error,
 	)
 }
@@ -64,14 +73,30 @@ type StudentRepository interface {
 		[]response.StudentResponse,
 		error,
 	)
+	FindByStatus(ctx context.Context, statusID int) (
+		[]response.StudentRegistrationResponse,
+		error,
+	)
 }
 
 type AttendanceRepository interface {
 	Save(ctx context.Context, req request.CreateBulkAttendanceRequest) error
-	FindByStudentID(ctx context.Context, studentID int) ([]response.AttendanceResponse, error)
-	FindByJournalID(ctx context.Context, journalID int) ([]response.AttendanceResponse, error)
-	FindByClassID(ctx context.Context, classID int) ([]response.AttendanceResponse, error)
-	FindAll(ctx context.Context) ([]response.AttendanceResponse, error)
+	FindByStudentID(ctx context.Context, studentID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindByJournalID(ctx context.Context, journalID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindByClassID(ctx context.Context, classID int) (
+		[]response.AttendanceResponse,
+		error,
+	)
+	FindAll(ctx context.Context) (
+		[]response.AttendanceResponse,
+		error,
+	)
 }
 
 type TeacherRepository interface {

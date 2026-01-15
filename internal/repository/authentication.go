@@ -59,6 +59,62 @@ func (r *AuthenticationRepositoryImpl) Login(ctx context.Context, req request.Lo
 	return user, nil
 }
 
+func (r *AuthenticationRepositoryImpl) StudentRegistration(ctx context.Context, req request.RegisterRequest) (
+	int,
+	error,
+) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return 0, err
+	}
+
+	var userID int
+	if err := tx.QueryRow(
+		ctx, `INSERT INTO users(username, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING id`, req.Username,
+		req.Email, passHash, 3,
+	).Scan(&userID); err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return 0, err
+		}
+		return 0, domain.ErrRegisterStudent
+	}
+
+	_, err = tx.Exec(
+		ctx,
+		`INSERT INTO student_registrations(user_id, full_name, address, parent_name, parent_phone) VALUES ($1, $2, $3, $4, $5)`,
+		userID, req.FullName, req.Address, req.ParentName, req.ParentPhone,
+	)
+
+	if err != nil {
+		return 0, domain.ErrRegisterStudent
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, domain.ErrRegisterStudent
+	}
+
+	return userID, nil
+}
+
+func (r *AuthenticationRepositoryImpl) StudentVerification(ctx context.Context, userID, statusID int) error {
+	_, err := r.db.Exec(
+		ctx, `UPDATE student_registrations SET verification_status_id = $1 WHERE user_id = $2`, statusID, userID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrStudentNotFound
+		}
+		return domain.ErrExecution
+	}
+	return nil
+}
+
 func (r *AuthenticationRepositoryImpl) CheckBlackList(ctx context.Context, token string) error {
 	key := fmt.Sprintf("blacklist:%s", token)
 	cond, err := r.client.Get(ctx, key).Result()

@@ -116,3 +116,39 @@ func (r *StudentRepositoryImpl) FindByClassID(ctx context.Context, classID int) 
 
 	return students, nil
 }
+
+func (r *StudentRepositoryImpl) FindByStatus(ctx context.Context, statusID int) (
+	[]response.StudentRegistrationResponse,
+	error,
+) {
+	rows, err := r.db.Query(
+		ctx,
+		`SELECT sr.id, sr.full_name, sr.address, sr.parent_name, sr.parent_phone, sr.registered_at, 
+       		u.id, u.username, u.email, u.created_at,
+       		r.name
+			FROM student_registrations sr
+			LEFT JOIN users u ON u.id = sr.user_id
+			LEFT JOIN roles r ON r.id = u.role_id
+			WHERE sr.verification_status_id = $1`, statusID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var students []response.StudentRegistrationResponse
+	for rows.Next() {
+		var student response.StudentRegistrationResponse
+		if err := rows.Scan(
+			&student.ID, &student.FullName, &student.Address, &student.ParentName, &student.ParentPhone,
+			&student.RegisteredAt, &student.User.ID, &student.User.Username, &student.User.Email,
+			&student.User.CreatedAt, &student.User.Role,
+		); err != nil {
+			return nil, err
+		}
+		students = append(students, student)
+	}
+
+	return students, nil
+}

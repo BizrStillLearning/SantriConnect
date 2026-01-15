@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  
+  color-scheme: dark;
+  color: #f8fafc;
+  background-color: #0f1419;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Custom styles for Santri Connect */
+h1 {
+  font-size: 2.25rem; /* 36px */
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.75rem; /* 28px */
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1rem; /* 16px */
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Base button styles */
+button {
+  border-radius: 0.5rem; /* 8px */
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s;
+  background-color: #1a1a1a;
+}
+
+button:hover {
+  border-color: #06b6d4;
+  background-color: #1a202c;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Primary button */
+.btn-primary {
+  background-color: #06b6d4;
+  color: #f8fafc;
+  border: 1px solid #06b6d4;
+}
+
+.btn-primary:hover {
+  background-color: #0891b2;
+  border-color: #0891b2;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background-color: #1a202c;
+  color: #f8fafc;
+  border: 1px solid #334155;
+}
+
+.btn-secondary:hover {
+  background-color: #475569;
+}
+
+/* Danger button */
+.btn-danger {
+  background-color: #ef4444;
+  color: #f8fafc;
+  border: 1px solid #ef4444;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Success button */
+.btn-success {
+  background-color: #10b981;
+  color: #f8fafc;
+  border: 1px solid #10b981;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+/* Warning button */
+.btn-warning {
+  background-color: #f59e0b;
+  color: #f8fafc;
+  border: 1px solid #f59e0b;
+}
+
+.btn-warning:hover {
+  background-color: #d97706;
+}

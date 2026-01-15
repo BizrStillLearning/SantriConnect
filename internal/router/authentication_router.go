@@ -22,6 +22,7 @@ func RegisterAuthenticationRouter(router fiber.Router, appCtx *AppContext, cfg *
 	auth := router.Group("/auth").Use(middleware.RateLimiter(cfg))
 	{
 		auth.Post("/login", handling.Login)
+		auth.Post("/register", handling.StudentRegistration)
 
 		protect := auth.Use(middleware.AuthMiddleware(accessSvc, "admin", "teacher", "student"))
 		{
