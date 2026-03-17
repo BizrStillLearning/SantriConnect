@@ -39,7 +39,7 @@ watch(() => route.path, () => {
         <slot />
       </div>
 
-      <footer class="p-4 text-center text-xs lg:text-sm text-gray-500 border-t bg-white">
+      <footer class="p-4 text-center text-xs lg:text-sm text-gray-500 border-t border-t-gray-300 shadow-md bg-white">
         &copy; 2025 SantriConnect. All rights reserved.
       </footer>
     </main>

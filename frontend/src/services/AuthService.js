@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost/SantriConnect/backend/app/auth/login.php',
+    baseURL: 'http://localhost/SantriConnect/backend/app/',
 });
 
 api.interceptors.request.use((config) => {

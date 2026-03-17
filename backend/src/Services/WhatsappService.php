@@ -2,10 +2,10 @@
 namespace App\Services;
 
 class WhatsappService {
-    private $token = "pBcVSqAH7rF9Cz4tKGbzKmZQbDG3UE";
+    private $token = "LDEgFufEPHpZkhjzwuDf";
+
 
     public function kirimPesan($target, $pesan) {
-        // 1. Jalankan fungsi format nomor
         $targetFormatted = $this->formatNomor($target);
 
         $curl = curl_init();
@@ -26,6 +26,8 @@ class WhatsappService {
             CURLOPT_HTTPHEADER => array(
                 "Authorization: " . $this->token
             ),
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
         ));
 
         $response = curl_exec($curl);
@@ -33,6 +35,9 @@ class WhatsappService {
         if (curl_errno($curl)) {
             $error_msg = curl_error($curl);
             error_log("cURL Error: " . $error_msg);
+
+            error_log("cURL Error: " . $error_msg);
+            return json_encode(["status" => false, "reason" => $error_msg]);
         }
 
         curl_close($curl);
@@ -40,8 +45,10 @@ class WhatsappService {
     }
 
     private function formatNomor($nomor) {
+        // Hapus semua karakter yang bukan angka
         $nomor = preg_replace('/[^0-9]/', '', $nomor);
 
+        // Jika nomor diawali '0', ganti dengan '62'
         if (substr($nomor, 0, 1) === '0') {
             $nomor = '62' . substr($nomor, 1);
         }

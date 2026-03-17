@@ -1,92 +1,67 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 require_once '../config/Database.php';
+require_once '../../src/Services/PSBService.php';
 require_once '../../src/Services/WhatsappService.php';
 
+use App\Services\PSBService;
 use App\Services\WhatsappService;
 
 $db = (new Database())->getConnection();
+$psbService = new PSBService($db);
 $wa = new WhatsappService();
+
 $data = json_decode(file_get_contents("php://input"));
 
 if (!empty($data->id)) {
-    try {
-        // Mulai Transaksi Database
-        $db->beginTransaction();
+    // Panggil Service untuk olah data
+    $result = $psbService->verifikasiDanPindahkan($data->id);
 
-        // 1. Ambil data pendaftar dengan LOCK agar tidak diproses double
-        $query = "SELECT * FROM psb_pendaftar WHERE id = ? AND status_verifikasi = 'pending' FOR UPDATE";
-        $stmt = $db->prepare($query);
-        $stmt->execute([$data->id]);
-        $pendaftar = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result['status']) {
+        $pendaftar = $result['data'];
+        $nisBaru = $result['nis'];
 
-        if (!$pendaftar) {
-            throw new Exception("Data tidak ditemukan atau sudah diverifikasi.");
-        }
+        $namaUpper = strtoupper($pendaftar['nama_lengkap']);
+        $linkMaps = "https://maps.app.goo.gl/2p3E89dPeaQ1ni4h6";
+        $passInfo = "Sesuai yang dibuat saat mendaftar";
 
-        // 2. Insert ke tabel users
-        $queryUser = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')";
-        $stmtUser = $db->prepare($queryUser);
-        $stmtUser->execute([
-            $pendaftar['username'],
-            $pendaftar['email'],
-            $pendaftar['password']
-        ]);
-        $newUserId = $db->lastInsertId();
-
-        // 3. Insert ke tabel santri (Pastikan kolom-kolom ini ada di DB Anda)
-        $querySantri = "INSERT INTO santri (user_id, nama_santri, nama_orang_tua, nomor_orang_tua, alamat) 
-                        VALUES (?, ?, ?, ?, ?)";
-        $stmtSantri = $db->prepare($querySantri);
-        $stmtSantri->execute([
-            $newUserId,
-            $pendaftar['nama_lengkap'],
-            $pendaftar['nama_orang_tua'],
-            $pendaftar['nomor_orang_tua'],
-            $pendaftar['alamat']
-        ]);
-
-        // 4. Update status pendaftar
-        $queryUpdate = "UPDATE psb_pendaftar SET status_verifikasi = 'verified' WHERE id = ?";
-        $stmtUpdate = $db->prepare($queryUpdate);
-        $stmtUpdate->execute([$data->id]);
-
-        // 5. SIMPAN SEMUA PERUBAHAN KE DATABASE (COMMIT)
-        $db->commit();
-
-        // 6. KIRIM WHATSAPP (Dilakukan setelah database sukses dicommit)
-        $namaSantriUpper = strtoupper($pendaftar['nama_lengkap']);
-        $pesan = "✅ *VERIFIKASI BERHASIL*\n\n" .
-            "Pendaftaran Ananda *{$namaSantriUpper}* telah disetujui.\n\n" .
-            "Sekarang Bapak/Ibu sudah bisa login ke Dashboard Santri dengan:\n" .
-            "Username: *{$pendaftar['username']}*\n\n" .
-            "Mohon segera melengkapi berkas di aplikasi.\n" .
+        $pesanWA = "✅ *VERIFIKASI BERHASIL*\n\n" .
+            "Pendaftaran Ananda *{$namaUpper}* telah disetujui.\n\n" .
+            "🆔 NIS: *{$nisBaru}*\n" .
+            "👤 Username: *{$pendaftar['username']}*\n" .
+            "🔑 Password: *{$passInfo}*\n\n" .
+            "----------------------------------\n" .
+            "📝 *INFO DAFTAR ULANG*\n" .
+            "1. Silakan datang ke kantor pesantren pada jam kerja (08.00 - 15.00).\n" .
+            "2. Membawa fotokopi KK & Akta Kelahiran.\n" .
+            "3. Melakukan pelunasan biaya administrasi awal.\n\n" .
+            "📍 *LOKASI PESANTREN*\n" .
+            "{$linkMaps}\n" .
+            "----------------------------------\n\n" .
+            "Silakan login ke Dashboard Santri untuk memantau absensi dan perkembangan Ananda.\n" .
             "Terima kasih.";
 
-        // Kirim via Service
-        $wa->kirimPesan($pendaftar['nomor_orang_tua'], $pesan);
+        // Kirim WA
+        $waResponse = $wa->kirimPesan($pendaftar['nomor_orang_tua'], $pesanWA);
 
-        // 7. BERIKAN RESPON JSON FINAL
         echo json_encode([
             "status" => "success",
-            "message" => "Santri berhasil diverifikasi dan notifikasi WA telah terkirim."
+            "message" => "Santri berhasil diverifikasi dengan NIS: $nisBaru",
+            "nis" => $nisBaru,
+            "wa_status" => json_decode($waResponse)
         ]);
-
-    } catch (Exception $e) {
-        // Jika ada error, batalkan semua perubahan database
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
-
+    } else {
         http_response_code(400);
-        echo json_encode([
-            "status" => "error",
-            "message" => $e->getMessage()
-        ]);
+        echo json_encode(["status" => "error", "message" => $result['message']]);
     }
 } else {
     http_response_code(400);

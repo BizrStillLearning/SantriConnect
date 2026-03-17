@@ -9,6 +9,7 @@ import RekapAbsensi from "../views/dashboard/admin/RekapAbsensi.vue";
 import RekapPsb from "../views/dashboard/admin/RekapPsb.vue";
 import JurnalAbsensi from "../views/dashboard/guru/JurnalAbsensi.vue";
 import SuccesPage from "../views/landing/Succes.vue";
+import DataSantri from "../views/dashboard/admin/DataSantri.vue";
 
 import {useAuthStore} from "../stores/AuthStore.js";
 
@@ -63,6 +64,12 @@ const routes = [
         path: '/rekap-psb',
         name: 'psb',
         component: RekapPsb,
+        meta: { public: true }
+    },
+    {
+        path: '/data-santri',
+        name: 'data-santri',
+        component: DataSantri,
         meta: { public: true }
     },
 

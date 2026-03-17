@@ -7,7 +7,8 @@ import {
   UserCheck,
   AlertCircle,
   Download,
-  Filter
+  Filter,
+  FileSpreadsheet, AlertTriangle, CheckCircle, Users, XCircle
 } from 'lucide-vue-next'
 import axios from 'axios'
 
@@ -16,12 +17,21 @@ const searchQuery = ref('')
 const filterKelas = ref('')
 const isLoading = ref(false)
 
-// Fetch data jurnal untuk admin
+const stats = ref({
+  total_pertemuan: 0,
+  rata_kehadiran: '0%',
+  total_izin_sakit: 0,
+  total_alpha: 0
+})
+
 const fetchAllJurnal = async () => {
   isLoading.value = true
   try {
     const res = await axios.get('http://localhost/SantriConnect/backend/app/admin/get_all_jurnal.php')
     listJurnal.value = res.data.data
+    if (res.data.stats) {
+      stats.value = res.data.stats
+    }
   } catch (error) {
     console.error("Gagal mengambil data jurnal")
   } finally {
@@ -29,19 +39,51 @@ const fetchAllJurnal = async () => {
   }
 }
 
+// Fungsi Export CSV yang Rapi
+const exportJurnal = () => {
+  if (filteredJurnal.value.length === 0) return alert("Tidak ada data untuk diexport");
+
+  const headers = ['Tanggal', 'Guru', 'Mata Pelajaran', 'Kelas', 'Materi', 'Hadir', 'Izin/Sakit', 'Alpha'];
+  const rows = filteredJurnal.value.map(j => [
+    j.tanggal,
+    j.nama_guru,
+    j.nama_mapel,
+    j.kelas,
+    `"${j.materi.replace(/"/g, '""')}"`, // Bungkus materi dengan kutip agar koma tidak merusak kolom
+    j.hadir,
+    parseInt(j.izin) + parseInt(j.sakit),
+    j.alpha
+  ]);
+
+  const csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Rekap_Jurnal_KBM_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 onMounted(() => {
   fetchAllJurnal()
 })
 
-// Logika Search & Filter
 const filteredJurnal = computed(() => {
   return listJurnal.value.filter(item => {
-    const matchSearch = item.materi.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        item.nama_guru.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchKelas = filterKelas.value ? item.kelas === filterKelas.value : true
-    return matchSearch && matchKelas
-  })
-})
+    const materi = item.materi ? item.materi.toLowerCase() : '';
+    const guru = item.nama_guru ? item.nama_guru.toLowerCase() : '';
+    const query = searchQuery.value.toLowerCase();
+
+    const matchSearch = materi.includes(query) || guru.includes(query);
+    const matchKelas = filterKelas.value ? item.kelas === filterKelas.value : true;
+
+    return matchSearch && matchKelas;
+  });
+});
 </script>
 
 <template>
@@ -50,45 +92,32 @@ const filteredJurnal = computed(() => {
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 class="text-2xl font-bold text-gray-900">Rekapitulasi Jurnal & Absensi</h3>
-          <p class="text-gray-500">Monitoring aktivitas KBM dan kehadiran santri seluruh kelas</p>
+          <p class="text-sm text-gray-500">Monitoring aktivitas KBM dan kehadiran santri seluruh kelas</p>
         </div>
-        <button class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all shadow-sm">
-          <Download class="w-4 h-4" /> Export Excel
+        <button
+            @click="exportJurnal"
+            class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-100 font-bold text-sm"
+        >
+          <FileSpreadsheet class="w-4 h-4" /> Export Excel (.csv)
         </button>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar class="w-5 h-5" /></div>
-            <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">+12%</span>
-          </div>
-          <p class="text-gray-500 text-sm font-medium">Total Tatap Muka</p>
-          <p class="text-2xl font-bold text-gray-900">148</p>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center"><Calendar class="w-5 h-5"/></div>
+          <div><p class="text-xs text-gray-500">Total Tatap Muka</p><p class="text-lg font-bold">{{ stats.total_pertemuan }}</p></div>
         </div>
-
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2 bg-green-50 text-green-600 rounded-lg"><UserCheck class="w-5 h-5" /></div>
-          </div>
-          <p class="text-gray-500 text-sm font-medium">Rata-rata Kehadiran</p>
-          <p class="text-2xl font-bold text-gray-900">94.2%</p>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div class="w-10 h-10 bg-green-50 text-green-600 rounded-lg flex items-center justify-center"><CheckCircle class="w-5 h-5"/></div>
+          <div><p class="text-xs text-gray-500">Total Hadir</p><p class="text-lg font-bold">{{ stats.rata_kehadiran }}</p></div>
         </div>
-
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2 bg-orange-50 text-orange-600 rounded-lg"><AlertCircle class="w-5 h-5" /></div>
-          </div>
-          <p class="text-gray-500 text-sm font-medium">Santri Izin/Sakit</p>
-          <p class="text-2xl font-bold text-gray-900">12</p>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div class="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-lg flex items-center justify-center"><AlertTriangle class="w-5 h-5"/></div>
+          <div><p class="text-xs text-gray-500">Izin/Sakit</p><p class="text-lg font-bold">{{ stats.total_izin_sakit }}</p></div>
         </div>
-
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <div class="p-2 bg-red-50 text-red-600 rounded-lg"><AlertCircle class="w-5 h-5" /></div>
-          </div>
-          <p class="text-gray-500 text-sm font-medium">Santri Alpha</p>
-          <p class="text-2xl font-bold text-gray-900">3</p>
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div class="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center"><XCircle class="w-5 h-5"/></div>
+          <div><p class="text-xs text-gray-500">Total Alpha</p><p class="text-lg font-bold">{{ stats.total_alpha }}</p></div>
         </div>
       </div>
 
@@ -104,58 +133,60 @@ const filteredJurnal = computed(() => {
             />
           </div>
           <div class="flex gap-2">
-            <select v-model="filterKelas" class="px-4 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-500">
+            <select v-model="filterKelas" class="px-4 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary-500 bg-white">
               <option value="">Semua Kelas</option>
               <option value="A">Kelas A</option>
               <option value="B">Kelas B</option>
             </select>
-            <button class="p-2 border border-gray-200 rounded-xl hover:bg-white transition-colors">
-              <Filter class="w-4 h-4 text-gray-600" />
-            </button>
           </div>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left">
-            <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+            <thead class="bg-gray-50 text-gray-600 text-[10px] uppercase tracking-widest font-black">
             <tr>
-              <th class="px-6 py-4 font-bold">Tanggal</th>
-              <th class="px-6 py-4 font-bold">Guru</th>
-              <th class="px-6 py-4 font-bold">Mapel / Kelas</th>
-              <th class="px-6 py-4 font-bold">Materi</th>
-              <th class="px-6 py-4 font-bold">Kehadiran</th>
-              <th class="px-6 py-4 font-bold">Aksi</th>
+              <th class="px-6 py-4">Tanggal</th>
+              <th class="px-6 py-4">Guru / Mapel</th>
+              <th class="px-6 py-4">Materi KBM</th>
+              <th class="px-6 py-4 text-center">Statistik Kehadiran</th>
+              <th class="px-6 py-4 text-right">Opsi</th>
             </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
             <tr v-for="jurnal in filteredJurnal" :key="jurnal.id" class="hover:bg-blue-50/30 transition-colors">
-              <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+              <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap font-mono">
                 {{ jurnal.tanggal }}
               </td>
               <td class="px-6 py-4">
-                <div class="font-bold text-gray-900">{{ jurnal.nama_guru }}</div>
+                <div class="font-bold text-gray-900 uppercase text-xs">{{ jurnal.nama_guru }}</div>
+                <div class="text-[10px] font-bold text-primary-600 tracking-tighter">{{ jurnal.nama_mapel }} • KELAS {{ jurnal.kelas }}</div>
               </td>
               <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900">{{ jurnal.nama_mapel }}</div>
-                <div class="text-xs text-gray-500">Kelas {{ jurnal.kelas }}</div>
+                <p class="text-sm text-gray-600 line-clamp-1 italic">"{{ jurnal.materi }}"</p>
               </td>
               <td class="px-6 py-4">
-                <p class="text-sm text-gray-600 line-clamp-1">{{ jurnal.materi }}</p>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold text-green-600">{{ jurnal.hadir }}H</span>
-                  <span class="text-xs font-bold text-orange-500">{{ jurnal.izin + jurnal.sakit }}I</span>
-                  <span class="text-xs font-bold text-red-500">{{ jurnal.alpha }}A</span>
+                <div class="flex items-center justify-center gap-1.5">
+                  <div class="flex flex-col items-center px-2 py-1 bg-green-50 rounded-lg border border-green-100 min-w-[40px]">
+                    <span class="text-[8px] text-green-600 font-bold uppercase">Hadir</span>
+                    <span class="text-xs font-bold text-green-700">{{ jurnal.hadir }}</span>
+                  </div>
+                  <div class="flex flex-col items-center px-2 py-1 bg-orange-50 rounded-lg border border-orange-100 min-w-[40px]">
+                    <span class="text-[8px] text-orange-600 font-bold uppercase">I/S</span>
+                    <span class="text-xs font-bold text-orange-700">{{ parseInt(jurnal.izin) + parseInt(jurnal.sakit) }}</span>
+                  </div>
+                  <div class="flex flex-col items-center px-2 py-1 bg-red-50 rounded-lg border border-red-100 min-w-[40px]">
+                    <span class="text-[8px] text-red-600 font-bold uppercase">Alpha</span>
+                    <span class="text-xs font-bold text-red-700">{{ jurnal.alpha }}</span>
+                  </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <button class="text-primary-600 hover:text-primary-800 text-sm font-bold">Detail</button>
+              <td class="px-6 py-4 text-right">
+                <button class="text-primary-600 hover:text-primary-800 text-xs font-black uppercase tracking-tighter bg-primary-50 px-3 py-1.5 rounded-lg transition-all">Detail</button>
               </td>
             </tr>
             <tr v-if="filteredJurnal.length === 0">
-              <td colspan="6" class="px-6 py-10 text-center text-gray-500 italic">
-                Tidak ada data ditemukan...
+              <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic text-sm">
+                Data jurnal tidak ditemukan...
               </td>
             </tr>
             </tbody>

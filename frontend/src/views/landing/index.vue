@@ -567,7 +567,7 @@ const programs = [
                     </div>
 
                     <!-- Tombol Arah -->
-                    <a href="https://maps.google.com/?q=Pondok+Pesantren+Islam+Jl.+Pendidikan+No.+12"
+                    <a href="https://maps.app.goo.gl/SiNCBBMCjJQ47p3MA"
                        target="_blank"
                        class="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 hover:shadow-xl transition">
                       <Navigation class="w-4 h-4 text-primary-600" />

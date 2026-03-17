@@ -4,7 +4,7 @@ import {
     Calendar,
     FileText,
     Settings,
-    CheckCircle,
+    CheckCircle, UsersIcon, SquareUserRound,
 } from 'lucide-vue-next'
 
 export const menuAside = [
@@ -33,6 +33,18 @@ export const menuAside = [
         to: '/rekap-jurnal',
         roles: ['admin']
     },
+    {
+        label: 'Data Santri',
+        icon: UsersIcon,
+        to: '/data-santri',
+        roles: ['admin']
+    },
+    // {
+    //     label: 'Data Guru',
+    //     icon: SquareUserRound,
+    //     to: '/data-guru',
+    //     roles: ['admin']
+    // },
     {
         label: 'Pengaturan',
         icon: Settings,

@@ -1,6 +1,9 @@
 <script setup>
-import { onMounted, computed } from 'vue'
-import { UserPlus, Download, Filter, Eye, CheckCircle2, Clock } from 'lucide-vue-next'
+import { ref, onMounted, computed } from 'vue'
+import {
+  UserPlus, Download, Filter, Eye, CheckCircle2,
+  Clock, XCircle, FileText, CreditCard, X
+} from 'lucide-vue-next'
 import Layout from "../../../components/Layout.vue"
 import { useFormStore } from "../../../stores/FormStore.js"
 import { useRouter } from "vue-router"
@@ -8,34 +11,65 @@ import { useRouter } from "vue-router"
 const formStore = useFormStore()
 const router = useRouter()
 
+// State untuk Modal Detail
+const showModal = ref(false)
+const selectedPendaftar = ref(null)
+
 onMounted(async () => {
   await formStore.fetchPendingList()
 })
 
 const stats = computed(() => [
   { label: 'Total Pendaftar', val: formStore.pendaftarList.length, col: 'text-blue-600' },
-  { label: 'Verified', val: '0', col: 'text-green-600' }, // Ini akan diupdate setelah fitur verifikasi jalan
   { label: 'Pending', val: formStore.pendaftarList.length, col: 'text-yellow-600' },
-  { label: 'Gagal', val: '0', col: 'text-red-600' }
+  { label: 'Verified', val: '0', col: 'text-green-600' },
+  { label: 'Rejected', val: '0', col: 'text-red-600' }
 ])
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+    year: 'numeric', month: 'short', day: 'numeric'
   })
 }
 
+const openDetail = (pendaftar) => {
+  selectedPendaftar.value = pendaftar
+  showModal.ref = true
+  // Catatan: Pastikan URL gambar di pendaftar list sudah lengkap dari backend
+}
+
 const handleVerify = async (id) => {
-  if (confirm("Verifikasi santri ini? Data akan dipindahkan ke database santri aktif.")) {
+  if (confirm("Verifikasi santri ini? Data akan dipindahkan ke database santri aktif dan NIS akan diterbitkan.")) {
     const success = await formStore.verifyPendaftar(id);
     if (success) {
-      alert("Berhasil! Santri kini sudah bisa login menggunakan akunnya.");
+      alert("Berhasil! Santri telah diverifikasi dan notifikasi WA telah terkirim.");
+      showModal.value = false
     }
   }
 }
 
+const handleReject = async (id) => {
+  const alasan = prompt("Masukkan alasan penolakan (akan dikirim ke pendaftar via WhatsApp):");
+  if (alasan) {
+    if (confirm("Tolak pendaftaran ini? Data pendaftar akan dihapus permanen setelah notifikasi dikirim.")) {
+      // Kita asumsikan ada action rejectPendaftar di formStore
+      try {
+        const response = await fetch(`http://localhost/SantriConnect/backend/app/psb/tolak.php`, {
+          method: 'POST',
+          body: JSON.stringify({ id, alasan })
+        });
+        const res = await response.json();
+        if (res.status === 'success') {
+          alert("Pendaftaran ditolak dan data telah dihapus.");
+          await formStore.fetchPendingList(); // Refresh list
+          showModal.value = false;
+        }
+      } catch (e) {
+        alert("Gagal menolak pendaftaran");
+      }
+    }
+  }
+}
 </script>
 
 <template>
@@ -43,15 +77,12 @@ const handleVerify = async (id) => {
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 class="text-xl font-bold text-gray-900">Rekap Pendaftar Santri Baru</h3>
-          <p class="text-sm text-gray-500">Manajemen verifikasi calon santri tahun ajaran 2025/2026</p>
+          <h3 class="text-xl font-bold text-gray-900">Manajemen Pendaftaran</h3>
+          <p class="text-sm text-gray-500">Verifikasi berkas dan pembayaran calon santri</p>
         </div>
         <div class="flex gap-2">
-          <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors text-gray-700">
-            <Download class="w-4 h-4" /> Export Excel
-          </button>
-          <button @click="router.push('/form')" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm">
-            <UserPlus class="w-4 h-4" /> Tambah Pendaftar
+          <button @click="router.push('/form')" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm">
+            <UserPlus class="w-4 h-4" /> Tambah Manual
           </button>
         </div>
       </div>
@@ -64,72 +95,35 @@ const handleVerify = async (id) => {
       </div>
 
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <h4 class="font-bold text-gray-800">Daftar Calon Santri Pending</h4>
-          <button class="text-gray-400 hover:text-primary-600"><Filter class="w-5 h-5" /></button>
-        </div>
-
         <div class="overflow-x-auto">
           <table class="w-full text-left">
-            <thead class="bg-gray-50/80">
+            <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">No. Reg</th>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Orang Tua</th>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Tgl Daftar</th>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
+              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Nama Lengkap</th>
+              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Berkas</th>
+              <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Aksi</th>
             </tr>
             </thead>
-
             <tbody class="divide-y divide-gray-100">
-            <tr v-if="formStore.isLoading">
-              <td colspan="6" class="px-6 py-10 text-center">
-                <div class="flex justify-center items-center gap-2 text-gray-500">
-                  <div class="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
-                  Memuat data...
-                </div>
-              </td>
-            </tr>
-
-            <tr v-else-if="formStore.pendaftarList.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center text-gray-400 italic">
-                Belum ada data pendaftar yang masuk.
-              </td>
-            </tr>
-
-            <tr v-for="p in formStore.pendaftarList" :key="p.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 text-xs font-mono text-gray-400">#REG-{{ p.id.toString().padStart(4, '0') }}</td>
+            <tr v-for="p in formStore.pendaftarList" :key="p.id" class="hover:bg-gray-50">
               <td class="px-6 py-4">
                 <div class="flex flex-col">
                   <span class="text-sm font-bold text-gray-900 capitalize">{{ p.nama_lengkap }}</span>
-                  <span class="text-xs text-gray-500">{{ p.email }}</span>
+                  <span class="text-xs text-gray-500">WA: {{ p.nomor_orang_tua }}</span>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <div class="flex flex-col text-sm text-gray-600">
-                  <span>{{ p.nama_orang_tua }}</span>
-                  <span class="text-[10px] text-gray-400">{{ p.nomor_orang_tua }}</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-xs text-gray-600">
-                {{ formatDate(p.tanggal_daftar) }}
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-1.5 px-2 py-1 bg-yellow-50 text-yellow-600 rounded-md border border-yellow-100 w-fit">
-                  <Clock class="w-3 h-3" />
-                  <span class="text-[10px] font-bold uppercase">Pending</span>
+                <div class="flex gap-2">
+                  <span v-if="p.file_kk" class="p-1 bg-blue-50 text-blue-600 rounded" title="KK Tersedia"><FileText class="w-4 h-4" /></span>
+                  <span v-if="p.file_bukti_bayar" class="p-1 bg-green-50 text-green-600 rounded" title="Bukti Bayar Tersedia"><CreditCard class="w-4 h-4" /></span>
                 </div>
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
-                  <button class="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Detail">
-                    <Eye class="w-4 h-4" />
+                  <button @click="selectedPendaftar = p; showModal = true" class="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-bold">
+                    <Eye class="w-3.5 h-3.5" /> Lihat Detail
                   </button>
-                  <button
-                      @click="handleVerify(p.id)"
-                      class="flex items-center gap-1 px-3 py-1 bg-green-50 text-green-600 border border-green-100 rounded-lg hover:bg-green-600 hover:text-white transition-all text-xs font-bold"
-                  >
+                  <button @click="handleVerify(p.id)" class="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-bold">
                     <CheckCircle2 class="w-3.5 h-3.5" /> Verifikasi
                   </button>
                 </div>
@@ -138,9 +132,49 @@ const handleVerify = async (id) => {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
 
-        <div class="p-4 border-t border-gray-100 bg-gray-50/30">
-          <p class="text-xs text-gray-500 font-medium">Menampilkan {{ formStore.pendaftarList.length }} data calon santri.</p>
+    <div v-if="showModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+          <h3 class="font-bold text-gray-800">Review Pendaftar: {{ selectedPendaftar.nama_lengkap }}</h3>
+          <button @click="showModal = false" class="p-1 hover:bg-gray-200 rounded-full transition-colors"><X class="w-5 h-5" /></button>
+        </div>
+
+        <div class="p-6 overflow-y-auto flex-1 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <p class="text-sm font-bold text-gray-600 flex items-center gap-2"><FileText class="w-4 h-4" /> Kartu Keluarga</p>
+              <div class="border rounded-xl bg-gray-100 min-h-[200px] flex items-center justify-center overflow-hidden">
+                <img v-if="selectedPendaftar.url_kk" :src="selectedPendaftar.url_kk" class="max-w-full hover:scale-110 transition-transform cursor-zoom-in" />
+                <span v-else class="text-gray-400 italic text-xs">Berkas tidak diunggah</span>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <p class="text-sm font-bold text-gray-600 flex items-center gap-2"><CreditCard class="w-4 h-4" /> Bukti Pembayaran</p>
+              <div class="border rounded-xl bg-gray-100 min-h-[200px] flex items-center justify-center overflow-hidden">
+                <img v-if="selectedPendaftar.url_bukti" :src="selectedPendaftar.url_bukti" class="max-w-full hover:scale-110 transition-transform cursor-zoom-in" />
+                <span v-else class="text-gray-400 italic text-xs">Bukti transfer tidak diunggah</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-700">
+            <p>Pastikan data di KK sesuai dengan nama yang diinput, dan nominal pada struk transfer adalah <strong>Rp 50.000</strong>.</p>
+          </div>
+        </div>
+
+        <div class="p-4 border-t bg-gray-50 flex justify-between gap-3">
+          <button @click="handleReject(selectedPendaftar.id)" class="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold text-sm">
+            <XCircle class="w-4 h-4" /> Tolak Pendaftaran
+          </button>
+          <div class="flex gap-3">
+            <button @click="showModal = false" class="px-4 py-2 text-gray-500 font-bold">Batal</button>
+            <button @click="handleVerify(selectedPendaftar.id)" class="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-lg">
+              <CheckCircle2 class="w-4 h-4" /> Verifikasi & Terbitkan NIS
+            </button>
+          </div>
         </div>
       </div>
     </div>
